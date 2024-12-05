@@ -1,0 +1,48 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Étape 1 : Cloner le repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Étape 2 : Installer Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    # Étape 3 : Installer les dépendances
+    - name: Install dependencies
+      run: npm install
+
+    # Étape 4 : Lancer les tests
+    - name: Run tests
+      run: npm test
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Deploy to Server
+      run: |
+        ssh -i ~/.ssh/id_rsa user@your-server-ip << 'EOF'
+          cd /path/to/your/application
+          git pull origin main
+          npm install
+          pm2 restart app-name || pm2 start index.js --name app-name
+        EOF
+      env:
+        SSH_KEY: ${{ secrets.SSH_KEY }}
